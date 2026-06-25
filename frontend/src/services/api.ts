@@ -1,11 +1,11 @@
 // frontend/src/services/api.ts
 import axios from 'axios';
 
-// Get the base domain (defaulting to local) and append the /api routing prefix
-const baseDomain = (import.meta as any).env.VITE_API_URL || 'http://127.0.0.1:8000';
+// Get the base domain directly (without appending /api here)
+const baseURL = (import.meta as any).env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 const api = axios.create({
-  baseURL: `${baseDomain}/api`, // This appends '/api' automatically to all requests
+  baseURL, // Points to "https://karyapath-ai.onrender.com" or local
   headers: {
     'Content-Type': 'application/json',
   },
@@ -25,9 +25,10 @@ api.interceptors.request.use(
   }
 );
 
+// We explicitly include '/api' at the start of each endpoint below
 export const createGoal = async (goalData: any) => {
   try {
-    const response = await api.post('/goals/', goalData);
+    const response = await api.post('/api/goals/', goalData);
     return response.data;
   } catch (error) {
     console.error('Error creating goal via Django integration:', error);
@@ -37,7 +38,7 @@ export const createGoal = async (goalData: any) => {
 
 export const getDashboard = async () => {
   try {
-    const response = await api.get('/dashboard/');
+    const response = await api.get('/api/dashboard/');
     return response.data;
   } catch (error) {
     console.error('Error loading dashboard via Django integration:', error);
@@ -47,7 +48,7 @@ export const getDashboard = async () => {
 
 export const completeSubtask = async (subtaskId: any) => {
   try {
-    const response = await api.post(`/subtasks/${subtaskId}/complete/`);
+    const response = await api.post(`/api/subtasks/${subtaskId}/complete/`);
     return response.data;
   } catch (error) {
     console.error(`Error completing subtask ${subtaskId} via Django integration:`, error);
@@ -57,7 +58,7 @@ export const completeSubtask = async (subtaskId: any) => {
 
 export const verifyGoogleToken = async (credential: any) => {
   try {
-    const response = await api.post('/auth/google-verify/', { credential });
+    const response = await api.post('/api/auth/google-verify/', { credential });
     
     if (response.data.success && response.data.token) {
       localStorage.setItem('authToken', response.data.token);
@@ -72,7 +73,7 @@ export const verifyGoogleToken = async (credential: any) => {
 
 export const resetDb = async () => {
   try {
-    const response = await api.post('/reset-db/');
+    const response = await api.post('/api/reset-db/');
     return response.data;
   } catch (error) {
     console.error('Error resetting DB via Django integration:', error);
