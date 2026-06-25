@@ -186,27 +186,61 @@ def complete_subtask(request, subtask_id):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def google_verify(request):
-    email = "og.krishnayak906564@gmail.com"
+    # 1. Retrieve the token sent by the React frontend
+    # Checks standard keys commonly used (like 'token' or 'credential')
+    token_str = request.data.get("token") or request.data.get("credential") or ""
+    
+    if not token_str:
+        return Response({"success": False, "error": "No token provided"}, status=400)
 
+    email = ""
+    first_name = "User"
+
+    # 2. Handle Sandbox/Mock Token Flow
+    if isinstance(token_str, str) and token_str.startswith("mock-"):
+        # Strip the "mock-" prefix to get the user's typed email
+        email = token_str.replace("mock-", "")
+        # Derive a clean name from the email (e.g., "krish" from "krish@gmail.com")
+        first_name = email.split("@")[0].capitalize() if "@" in email else "Sandbox User"
+        
+    # 3. Handle Real Google OAuth Token Flow
+    else:
+        try:
+            # Verify the real Google OAuth ID Token
+            idinfo = id_token.verify_oauth2_token(token_str, google_requests.Request())
+            email = idinfo.get('email')
+            first_name = idinfo.get('given_name', idinfo.get('name', 'Google User'))
+        except Exception as e:
+            return Response({
+                "success": False, 
+                "error": f"Google Token verification failed: {str(e)}"
+            }, status=400)
+
+    if not email:
+        return Response({"success": False, "error": "Could not resolve an email from the token"}, status=400)
+
+    # 4. Create or get the Django user dynamically based on the resolved email
     user, created = User.objects.get_or_create(
         username=email,
         defaults={
             "email": email,
-            "first_name": "Krishna"
+            "first_name": first_name
         }
     )
 
-    login(request._request, user)  # Passes the underlying Django HttpRequest # <--- 
+    # Log the user in to set session cookies
+    login(request._request, user)  
     
-    # Generate or retrieve token for the user
+    # Generate or retrieve REST token
     token, _ = Token.objects.get_or_create(user=user)
 
+    # Return the dynamically resolved user info back to the React frontend
     return Response({
         "success": True,
-        "token": token.key,  # <--- RETURN THE TOKEN TO THE CLIENT
+        "token": token.key,
         "user": {
             "email": email,
-            "name": "Krishna",
+            "name": first_name,
             "avatarUrl": ""
         }
     })

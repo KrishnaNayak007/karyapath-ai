@@ -25,7 +25,7 @@ export default function Login({ onLoginSuccess, setCurrentPage }: LoginProps) {
     return (import.meta as any).env.VITE_GOOGLE_CLIENT_ID ? 'real' : 'sandbox';
   });
 
-  const [emailInput, setEmailInput] = useState('og.krishnayak906564@gmail.com');
+  const [emailInput, setEmailInput] = useState('');
   const [useEmailFlow, setUseEmailFlow] = useState(false);
 
   // Initialize and load Google Identity Services
