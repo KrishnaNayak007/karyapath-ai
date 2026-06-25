@@ -22,49 +22,29 @@ api.interceptors.request.use(
 // NOTICE: No leading slashes in the paths below!
 // Axios will perfectly combine `${baseURL}${endpoint}` -> ".../api/goals/"
 
+// Replace your endpoints in frontend/src/services/api.ts with these (no leading slash):
 export const createGoal = async (goalData: any) => {
-  try {
-    const response = await api.post('goals/', goalData);
-    return response.data;
-  } catch (error) {
-    console.error('Error creating goal via Django integration:', error);
-    throw error;
-  }
+  const response = await api.post('goals/', goalData); // No leading slash
+  return response.data;
 };
 
 export const getDashboard = async () => {
-  try {
-    const response = await api.get('dashboard/');
-    return response.data;
-  } catch (error) {
-    console.error('Error loading dashboard via Django integration:', error);
-    throw error;
-  }
+  const response = await api.get('dashboard/'); // No leading slash
+  return response.data;
 };
 
 export const completeSubtask = async (subtaskId: any) => {
-  try {
-    const response = await api.post(`subtasks/${subtaskId}/complete/`);
-    return response.data;
-  } catch (error) {
-    console.error(`Error completing subtask ${subtaskId} via Django integration:`, error);
-    throw error;
-  }
+  const response = await api.post(`subtasks/${subtaskId}/complete/`); // No leading slash
+  return response.data;
 };
 
 export const verifyGoogleToken = async (credential: any) => {
-  try {
-    const response = await api.post('auth/google-verify/', { credential });
-    
-    if (response.data.success && response.data.token) {
-      localStorage.setItem('authToken', response.data.token);
-    }
-    
-    return response.data;
-  } catch (error) {
-    console.error('Error verifying Google token via Django integration:', error);
-    throw error;
+  const response = await api.post('auth/google-verify/', { credential }); // No leading slash
+  
+  if (response.data.success && response.data.token) {
+    localStorage.setItem('authToken', response.data.token);
   }
+  return response.data;
 };
 
 export const resetDb = async () => {
