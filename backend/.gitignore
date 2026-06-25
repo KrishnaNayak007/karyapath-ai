@@ -3,4 +3,5 @@ __pycache__/
 db.sqlite3
 .env
 credentials.json
+venv/
 node_modules/
