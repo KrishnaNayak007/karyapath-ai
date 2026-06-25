@@ -2,13 +2,10 @@
 import axios from 'axios';
 
 // Get the base domain directly (without appending /api here)
-const baseURL = (import.meta as any).env.VITE_API_URL || 'http://127.0.0.1:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'https://karyapath-ai.onrender.com';
 
 const api = axios.create({
-  baseURL, // Points to "https://karyapath-ai.onrender.com" or local
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: `${API_URL}/api/`, // Ensure it ends with a slash!
 });
 
 // Interceptor to automatically attach the Token to every request header
