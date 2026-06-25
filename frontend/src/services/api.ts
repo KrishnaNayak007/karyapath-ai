@@ -1,8 +1,11 @@
+// frontend/src/services/api.ts
 import axios from 'axios';
 
-// Base API configuration
 const api = axios.create({
-  baseURL: '', // Relative URLs to connect to the same host/port
+  baseURL: (import.meta as any).env.VITE_API_URL || 'http://127.0.0.1:8000',
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
 export interface Goal {
