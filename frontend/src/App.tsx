@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -32,15 +32,24 @@ export default function App() {
     return null;
   });
 
-  // Intercept routing to verify authentication state
-  const handleNavigate = (page: string) => {
-    if (!currentUser && page !== 'landing' && page !== 'login') {
-      setCurrentPage('login');
-    } else if (currentUser && page === 'login') {
-      setCurrentPage('dashboard');
+  // --- NEW: Global Router Guard to safely handle auth checks and page redirects ---
+  useEffect(() => {
+    if (!currentUser) {
+      // Force user back to login if they try to access protected dashboard pages while logged out
+      if (currentPage !== 'landing' && currentPage !== 'login') {
+        setCurrentPage('login');
+      }
     } else {
-      setCurrentPage(page);
+      // Force logged-in users to dashboard if they are hanging around landing or login pages
+      if (currentPage === 'landing' || currentPage === 'login') {
+        setCurrentPage('dashboard');
+      }
     }
+  }, [currentUser, currentPage]);
+
+  // Simplified routing handler (the useEffect above handles the security checks)
+  const handleNavigate = (page: string) => {
+    setCurrentPage(page);
   };
 
   const handleLoginSuccess = (user: User) => {
