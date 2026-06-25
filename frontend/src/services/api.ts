@@ -1,100 +1,83 @@
 // frontend/src/services/api.ts
 import axios from 'axios';
 
+// Get the base domain (defaulting to local) and append the /api routing prefix
+const baseDomain = (import.meta as any).env.VITE_API_URL || 'http://127.0.0.1:8000';
+
 const api = axios.create({
-  baseURL: (import.meta as any).env.VITE_API_URL || 'http://127.0.0.1:8000',
+  baseURL: `${baseDomain}/api`, // This appends '/api' automatically to all requests
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-export interface Goal {
-  id: string;
-  title: string;
-  description: string;
-  deadline: string;
-  priority: string;
-  created_at: string;
-}
+// Interceptor to automatically attach the Token to every request header
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token && token !== 'null' && token !== 'undefined') {
+      config.headers['Authorization'] = `Token ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
-export interface Subtask {
-  id: string;
-  goal_id: string;
-  title: string;
-  estimated_minutes: number;
-  status: 'pending' | 'completed';
-  confidence: string;
-}
-
-export interface ScheduledBlock {
-  id: string;
-  subtask_id: string;
-  start_time: string;
-  end_time: string;
-  google_calendar_event_id: string | null;
-  was_auto_rescheduled: boolean;
-  reschedule_reason: string | null;
-}
-
-export interface ReplanLog {
-  id: string;
-  trigger_reason: string;
-  ai_reasoning: string;
-  triggered_at: string;
-  was_automatic: boolean;
-  goal_title?: string;
-  task_title?: string;
-}
-
-export interface DashboardData {
-  goals: Goal[];
-  subtasks: Subtask[];
-  scheduled_blocks: ScheduledBlock[];
-  replan_logs: ReplanLog[];
-  new_replans: ReplanLog[];
-}
-
-/**
- * Creates a new goal, which triggers the Gemini subtask and block schedule planner.
- */
-export const createGoal = async (data: {
-  title: string;
-  description?: string;
-  deadline: string;
-  priority: string;
-}): Promise<{ goal: Goal; subtasks: Subtask[]; scheduled_blocks: ScheduledBlock[] }> => {
-  const response = await api.post('/goals', data);
-  return response.data;
+export const createGoal = async (goalData: any) => {
+  try {
+    const response = await api.post('/goals/', goalData);
+    return response.data;
+  } catch (error) {
+    console.error('Error creating goal via Django integration:', error);
+    throw error;
+  }
 };
 
-/**
- * Loads all dashboard data and triggers the autonomous planner check on the backend.
- */
-export const getDashboard = async (): Promise<DashboardData> => {
-  const response = await api.get('/dashboard');
-  return response.data;
+export const getDashboard = async () => {
+  try {
+    const response = await api.get('/dashboard/');
+    return response.data;
+  } catch (error) {
+    console.error('Error loading dashboard via Django integration:', error);
+    throw error;
+  }
 };
 
-/**
- * Marks a subtask as completed and logs the action.
- */
-export const completeSubtask = async (id: string): Promise<{ success: boolean; subtask: Subtask }> => {
-  const response = await api.post(`/subtasks/${id}/complete`);
-  return response.data;
+export const completeSubtask = async (subtaskId: any) => {
+  try {
+    const response = await api.post(`/subtasks/${subtaskId}/complete/`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error completing subtask ${subtaskId} via Django integration:`, error);
+    throw error;
+  }
 };
 
-/**
- * Verifies the Google Identity Services token with the backend and retrieves user details.
- */
-export const verifyGoogleToken = async (credential: string): Promise<{ success: boolean; user: { email: string; name: string; avatarUrl: string } }> => {
-  const response = await api.post('/api/auth/google-verify', { credential });
-  return response.data;
+export const verifyGoogleToken = async (credential: any) => {
+  try {
+    const response = await api.post('/auth/google-verify/', { credential });
+    
+    if (response.data.success && response.data.token) {
+      localStorage.setItem('authToken', response.data.token);
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error verifying Google token via Django integration:', error);
+    throw error;
+  }
 };
 
-/**
- * Resets the server database to the initial pre-seeded state for demo purposes.
- */
-export const resetDb = async (): Promise<{ success: boolean; message: string }> => {
-  const response = await api.post('/reset-db');
-  return response.data;
+export const resetDb = async () => {
+  try {
+    const response = await api.post('/reset-db/');
+    return response.data;
+  } catch (error) {
+    console.error('Error resetting DB via Django integration:', error);
+    throw error;
+  }
 };
+
+export default api;
