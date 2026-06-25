@@ -1,0 +1,96 @@
+{
+  "goals": [
+    {
+      "id": "goal-1",
+      "title": "Build KaryaPath AI Platform",
+      "description": "Establish the autonomous productivity engine and build a premium, highly responsive dark SaaS UI with calendar integration.",
+      "deadline": "2026-06-28T18:00:00.000Z",
+      "priority": "High",
+      "created_at": "2026-06-22T09:00:00.000Z"
+    }
+  ],
+  "subtasks": [
+    {
+      "id": "subtask-1",
+      "goal_id": "goal-1",
+      "title": "Set up project structure and environment",
+      "estimated_minutes": 60,
+      "status": "completed",
+      "confidence": "98%"
+    },
+    {
+      "id": "subtask-2",
+      "goal_id": "goal-1",
+      "title": "Design modern dark SaaS UI layout",
+      "estimated_minutes": 180,
+      "status": "completed",
+      "confidence": "95%"
+    },
+    {
+      "id": "subtask-3",
+      "goal_id": "goal-1",
+      "title": "Backend integration and autonomous checks",
+      "estimated_minutes": 120,
+      "status": "pending",
+      "confidence": "92%"
+    },
+    {
+      "id": "subtask-4",
+      "goal_id": "goal-1",
+      "title": "Sync to Google Calendar and testing",
+      "estimated_minutes": 90,
+      "status": "pending",
+      "confidence": "88%"
+    }
+  ],
+  "scheduled_blocks": [
+    {
+      "id": "block-1",
+      "subtask_id": "subtask-1",
+      "start_time": "2026-06-22T14:00:00.000Z",
+      "end_time": "2026-06-22T15:00:00.000Z",
+      "google_calendar_event_id": "gcal-event-1",
+      "was_auto_rescheduled": false,
+      "reschedule_reason": null
+    },
+    {
+      "id": "block-2",
+      "subtask_id": "subtask-2",
+      "start_time": "2026-06-23T10:00:00.000Z",
+      "end_time": "2026-06-23T13:00:00.000Z",
+      "google_calendar_event_id": "gcal-event-2",
+      "was_auto_rescheduled": false,
+      "reschedule_reason": null
+    },
+    {
+      "id": "block-3",
+      "subtask_id": "subtask-3",
+      "start_time": "2026-06-23T15:00:00.000Z",
+      "end_time": "2026-06-23T17:00:00.000Z",
+      "google_calendar_event_id": "gcal-event-3",
+      "was_auto_rescheduled": false,
+      "reschedule_reason": null
+    },
+    {
+      "id": "block-4",
+      "subtask_id": "subtask-4",
+      "start_time": "2026-06-25T14:00:00.000Z",
+      "end_time": "2026-06-25T15:30:00.000Z",
+      "google_calendar_event_id": "gcal-event-4",
+      "was_auto_rescheduled": false,
+      "reschedule_reason": null
+    }
+  ],
+  "replan_logs": [
+    {
+      "id": "log-1",
+      "trigger_reason": "Setup Phase Completed",
+      "ai_reasoning": "Goal initialized. Gemini has parsed details and established optimal task scheduling paths to secure deadline feasibility.",
+      "triggered_at": "2026-06-22T09:05:00.000Z",
+      "was_automatic": true,
+      "goal_title": "Build KaryaPath AI Platform",
+      "task_title": "Set up project structure and environment"
+    }
+  ],
+  "new_replans": []
+}

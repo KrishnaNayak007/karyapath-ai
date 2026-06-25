@@ -1,0 +1,6 @@
+{
+  "name": "KaryaPath AI",
+  "description": "Autonomous productivity companion that breaks goals down into tasks using Gemini, schedules them, and automatically replans missed tasks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
