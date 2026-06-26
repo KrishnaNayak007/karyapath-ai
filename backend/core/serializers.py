@@ -7,7 +7,7 @@ class ScheduledBlockSerializer(serializers.ModelSerializer):
         model = ScheduledBlock
         fields = [
             "id", "subtask", "start_time", "end_time",
-            "google_calendar_event_id", "was_auto_rescheduled", "reschedule_reason","action_draft", "is_crisis_active"
+            "google_calendar_event_id", "was_auto_rescheduled", "reschedule_reason",
         ]
 
 
@@ -16,7 +16,7 @@ class SubtaskSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Subtask
-        fields = ["id", "goal", "title", "estimated_minutes", "order", "status", "blocks"]
+        fields = ["id", "goal", "title", "estimated_minutes", "order", "status", "blocks","action_draft", "is_crisis_active"]
 
 
 class ReplanLogSerializer(serializers.ModelSerializer):
