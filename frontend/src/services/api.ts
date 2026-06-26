@@ -78,4 +78,24 @@ export const resetDb = async () => {
   }
 };
 
+// Append these inside frontend/src/services/api.ts:
+
+export const createGoalFromBrainDump = async (text: string) => {
+  const response = await api.post('goals/brain-dump/', { brain_dump: text });
+  return response.data;
+};
+
+export const verifySubtaskProof = async (subtaskId: any, file: File) => {
+  const formData = new FormData();
+  formData.append("proof", file);
+  
+  // Directly post multipart form data to your endpoint view
+  const response = await api.post(`subtasks/${subtaskId}/verify-proof/`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data"
+    }
+  });
+  return response.data;
+};
+
 export default api;

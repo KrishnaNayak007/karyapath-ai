@@ -1,5 +1,6 @@
 from urllib import request
-
+from .gemini_client import parse_brain_dump
+from .gemini_client import verify_subtask_screenshot
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -283,3 +284,120 @@ def toggle_crisis(request, subtask_id):
         "subtask_id": subtask.id,
         "is_crisis_active": subtask.is_crisis_active
     })
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_goal_from_brain_dump(request):
+    """
+    API view that takes a raw "brain dump" string, parses it into structured
+    data, and runs your standard Goal creation + scheduling logic.
+    """
+    raw_text = request.data.get("brain_dump", "")
+    if not raw_text:
+        return Response({"error": "No brain dump text provided"}, status=400)
+
+    # 1. Parse chaotic text into structured goal parameters via Gemini
+    parsed = parse_brain_dump(raw_text)
+    title = parsed["title"]
+    deadline = parsed["deadline"]
+    priority = parsed.get("priority", "medium")
+
+    # 2. Programmatically create the Goal
+    goal = Goal.objects.create(
+        user=request.user, title=title, deadline=deadline, priority=priority
+    )
+
+    # 3. Reuse your existing breakdown logic
+    subtask_data = breakdown_goal(title, deadline)
+
+    # 4. Reuse your existing Local IST scheduler logic
+    cursor = timezone.localtime(timezone.now() + timedelta(hours=2))
+    flat_subtasks = []
+    flat_blocks = []
+
+    for order, item in enumerate(subtask_data):
+        subtask = Subtask.objects.create(
+            goal=goal,
+            title=item["title"],
+            estimated_minutes=item["estimated_minutes"],
+            order=order,
+        )
+        start, end = _next_working_slot(cursor, item["estimated_minutes"])
+        block = ScheduledBlock.objects.create(
+            subtask=subtask, start_time=start, end_time=end
+        )
+        try:
+            event_id = create_calendar_event(block)
+            block.google_calendar_event_id = event_id
+            block.save()
+        except Exception as e:
+            print(f"Calendar push failed for block {block.id}: {e}")
+            
+        cursor = end + timedelta(minutes=30)
+
+        # Build response payload mapping your React state callbacks
+        flat_subtasks.append({
+            "id": subtask.id,
+            "goal": goal.id,
+            "title": subtask.title,
+            "estimated_minutes": subtask.estimated_minutes,
+            "order": subtask.order,
+            "status": subtask.status
+        })
+        flat_blocks.append({
+            "id": block.id,
+            "subtask_id": subtask.id,
+            "start_time": block.start_time,
+            "end_time": block.end_time,
+            "google_calendar_event_id": block.google_calendar_event_id,
+            "was_auto_rescheduled": block.was_auto_rescheduled,
+            "reschedule_reason": block.reschedule_reason
+        })
+
+    return Response({
+        "goal": GoalSerializer(goal).data,
+        "subtasks": flat_subtasks,
+        "scheduled_blocks": flat_blocks
+    }, status=201)
+
+# Append to backend/core/views.py:
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def verify_subtask_proof(request, subtask_id):
+    """
+    API endpoint that accepts a multipart image upload, validates it
+    via Gemini Vision, and marks the subtask as completed.
+    """
+    try:
+        subtask = Subtask.objects.get(id=subtask_id, goal__user=request.user)
+    except Subtask.DoesNotExist:
+        return Response({"error": "Subtask not found"}, status=404)
+
+    image_file = request.FILES.get("proof")
+    if not image_file:
+        return Response({"error": "No image proof file provided"}, status=400)
+
+    # Read binary bytes and detect content type
+    image_bytes = image_file.read()
+    mime_type = image_file.content_type
+
+    # Verify via Gemini Vision
+    is_valid = verify_subtask_screenshot(subtask.title, image_bytes, mime_type)
+
+    if is_valid:
+        subtask.status = "completed"  # aligns with your 'completed' status string
+        subtask.save()
+        # Immediately run your autonomous trigger checklist check
+        check_and_replan_for_user(request.user)
+        
+        return Response({
+            "success": True,
+            "message": "AI successfully verified your work! Task marked completed.",
+            "subtask_id": subtask.id
+        })
+    else:
+        return Response({
+            "success": False,
+            "message": "AI verification failed. The screenshot does not appear to show proof of completion for this task."
+        }, status=400)

@@ -7,13 +7,15 @@ import {
   AlertCircle, 
   Play, 
   Pause, 
-  RotateCcw 
+  RotateCcw,
+  UploadCloud
 } from 'lucide-react';
 import { 
   Subtask, 
   completeSubtask, 
   generateSubtaskDraft, 
-  toggleSubtaskCrisis 
+  toggleSubtaskCrisis,
+  verifySubtaskProof
 } from '../services/api';
 
 interface TaskCardProps {
@@ -26,14 +28,15 @@ export default function TaskCard({ subtask, onCompleted }: TaskCardProps) {
   const [completing, setCompleting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  // AI & Crisis States
+  // AI, Crisis, & Proof-of-Work States
   const [draft, setDraft] = React.useState<string | null>(subtask.action_draft || null);
   const [loadingDraft, setLoadingDraft] = React.useState(false);
   const [isCrisis, setIsCrisis] = React.useState(subtask.is_crisis_active || false);
   const [secondsLeft, setSecondsLeft] = React.useState(15 * 60); // 15 Minute micro-burst
   const [timerActive, setTimerActive] = React.useState(false);
+  const [uploading, setUploading] = React.useState(false);
 
-  // 15-minute Focus Timer Thread
+  // Focus Timer Logic
   React.useEffect(() => {
     let interval: any = null;
     if (timerActive && secondsLeft > 0) {
@@ -42,7 +45,7 @@ export default function TaskCard({ subtask, onCompleted }: TaskCardProps) {
       }, 1000);
     } else if (secondsLeft === 0) {
       setTimerActive(false);
-      alert("🎉 Micro-burst session complete! High five, you broke through the procrastination barrier!");
+      alert("⏱️ Micro-burst complete! You beat the procrastination block!");
     }
     return () => clearInterval(interval);
   }, [timerActive, secondsLeft]);
@@ -73,8 +76,8 @@ export default function TaskCard({ subtask, onCompleted }: TaskCardProps) {
       const data = await generateSubtaskDraft(subtask.id);
       setDraft(data.action_draft);
     } catch (err) {
-      console.error('Error generating AI draft:', err);
-      setError('Failed to load AI action draft.');
+      console.error('Error generating draft:', err);
+      setError('Failed to load action draft.');
     } finally {
       setLoadingDraft(false);
     }
@@ -94,6 +97,29 @@ export default function TaskCard({ subtask, onCompleted }: TaskCardProps) {
     } catch (err) {
       console.error('Error toggling crisis mode:', err);
       setError('Failed to toggle crisis mode.');
+    }
+  };
+
+  // Handle Screenshot Upload Verification
+  const handleProofUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+    try {
+      const res = await verifySubtaskProof(subtask.id, file);
+      if (res.success) {
+        alert("🎉 Work verified! The task has been marked complete.");
+        onCompleted(); // Refreshes page state via callback
+      } else {
+        setError(res.message || "Could not verify your submission.");
+      }
+    } catch (err: any) {
+      console.error('Error verifying work:', err);
+      setError(err.response?.data?.message || 'Verification failed. Upload a clearer completion screenshot.');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -160,7 +186,7 @@ export default function TaskCard({ subtask, onCompleted }: TaskCardProps) {
         </div>
       </div>
 
-      {/* Proactive Action & Crisis Triggers row */}
+      {/* Action Row */}
       {!isCompleted && (
         <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-800/40">
           <button
@@ -183,12 +209,25 @@ export default function TaskCard({ subtask, onCompleted }: TaskCardProps) {
             <AlertCircle className="w-3.5 h-3.5" />
             <span>{isCrisis ? "Focusing" : "Crisis Mode"}</span>
           </button>
+
+          {/* AI Screenshot Verification Upload Trigger */}
+          <label className="flex items-center space-x-1 text-xs bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 px-2.5 py-1.5 rounded-lg transition active:scale-95 cursor-pointer">
+            <UploadCloud className="w-3.5 h-3.5" />
+            <span>{uploading ? "Verifying..." : "Verify Proof"}</span>
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={handleProofUpload} 
+              className="hidden" 
+              disabled={uploading}
+            />
+          </label>
         </div>
       )}
 
-      {/* Interactive AI action draft output panel */}
+      {/* AI Action Starter Expandable Panel */}
       {draft && !isCompleted && (
-        <div className="mt-3 p-3 bg-slate-950/70 border border-emerald-950/80 rounded-lg text-xs font-mono text-slate-300 animate-fade-in">
+        <div className="mt-3 p-3 bg-slate-950/70 border border-emerald-950/80 rounded-lg text-xs font-mono text-slate-300">
           <div className="flex justify-between items-center mb-1.5 pb-1 border-b border-emerald-950/40 text-emerald-400 font-bold uppercase tracking-wider text-[9px]">
             <span>AI Action Starter</span>
             <button
@@ -205,9 +244,9 @@ export default function TaskCard({ subtask, onCompleted }: TaskCardProps) {
         </div>
       )}
 
-      {/* Emergency Focus Session (Countdown Clock) */}
+      {/* Crisis Mode Focus Countdown Panel */}
       {isCrisis && !isCompleted && (
-        <div className="mt-3 border-t border-rose-950/40 pt-3 animate-fade-in">
+        <div className="mt-3 border-t border-rose-950/40 pt-3">
           <div className="flex items-center justify-between bg-slate-950 border border-rose-950/40 p-3 rounded-lg">
             <div className="flex items-center space-x-2">
               <span className="h-2 w-2 rounded-full bg-rose-500 animate-ping" />
