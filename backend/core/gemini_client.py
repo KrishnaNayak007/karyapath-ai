@@ -113,3 +113,22 @@ Estimated work remaining: {hours_remaining} hours
 Respond with ONLY the explanation text, no preamble.
 """
     return _call_gemini(prompt)
+
+# Append this to the end of backend/core/gemini_client.py:
+
+def generate_subtask_draft(goal_title: str, subtask_title: str) -> str:
+    """
+    Uses Gemini to generate a micro action starter draft to eliminate procrastination friction.
+    """
+    prompt = f"""You are a productivity planning assistant. The user is experiencing a procrastination block on starting this task:
+Parent Goal: "{goal_title}"
+Subtask to execute: "{subtask_title}"
+
+Produce an encouraging, highly actionable starter draft or step-by-step roadmap for this specific subtask:
+1. If communication-based (email/draft), write a ready-to-copy-and-paste draft.
+2. If document/writing or building-based, write a clean markdown outline/skeleton.
+3. If study/learning-based, write a quick 3-item checklist/starting guide.
+
+Respond with ONLY the actionable content. Tone must be encouraging but extremely brief (max 100 words). No preamble or chatty intro.
+"""
+    return _call_gemini(prompt)

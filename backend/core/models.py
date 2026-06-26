@@ -25,6 +25,8 @@ class Subtask(models.Model):
     goal = models.ForeignKey(Goal, on_delete=models.CASCADE, related_name="subtasks")
     title = models.CharField(max_length=255)
     estimated_minutes = models.IntegerField()
+    action_draft = models.TextField(blank=True, null=True, help_text="AI-generated template/email/code outline to start this subtask.")
+    is_crisis_active = models.BooleanField(default=False, help_text="Enables active focus mode for this subtask.")
     order = models.IntegerField(default=0)
     status = models.CharField(
         max_length=20,

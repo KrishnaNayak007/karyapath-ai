@@ -7,7 +7,7 @@ class ScheduledBlockSerializer(serializers.ModelSerializer):
         model = ScheduledBlock
         fields = [
             "id", "subtask", "start_time", "end_time",
-            "google_calendar_event_id", "was_auto_rescheduled", "reschedule_reason",
+            "google_calendar_event_id", "was_auto_rescheduled", "reschedule_reason","action_draft", "is_crisis_active"
         ]
 
 

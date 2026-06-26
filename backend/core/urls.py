@@ -10,4 +10,6 @@ urlpatterns = [
         views.google_verify,
         name="google_verify"
     ),
+    path("subtasks/<int:subtask_id>/generate-draft/", views.generate_draft, name="generate_draft"),
+    path("subtasks/<int:subtask_id>/toggle-crisis/", views.toggle_crisis, name="toggle_crisis"),
 ]

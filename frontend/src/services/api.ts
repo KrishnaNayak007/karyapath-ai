@@ -1,6 +1,19 @@
 // frontend/src/services/api.ts
 import axios from 'axios';
 
+// Define the Subtask structure to prevent any TypeScript compilation errors
+export interface Subtask {
+  id: any;
+  goal: any;
+  title: string;
+  estimated_minutes: number;
+  order: number;
+  status: string;
+  confidence?: any;
+  action_draft?: string | null;       // New field for AI Action Starters
+  is_crisis_active?: boolean;          // New field for Emergency focus
+}
+
 const API_URL = import.meta.env.VITE_API_URL || 'https://karyapath-ai.onrender.com';
 
 const api = axios.create({
@@ -31,6 +44,18 @@ export const getDashboard = async () => {
 
 export const completeSubtask = async (subtaskId: any) => {
   const response = await api.post(`subtasks/${subtaskId}/complete/`); // No leading slash
+  return response.data;
+};
+
+// NEW: API Call to trigger AI Draft Starters
+export const generateSubtaskDraft = async (subtaskId: any) => {
+  const response = await api.post(`subtasks/${subtaskId}/generate-draft/`);
+  return response.data;
+};
+
+// NEW: API Call to toggle Crisis Mode
+export const toggleSubtaskCrisis = async (subtaskId: any) => {
+  const response = await api.post(`subtasks/${subtaskId}/toggle-crisis/`);
   return response.data;
 };
 

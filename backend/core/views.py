@@ -244,3 +244,42 @@ def google_verify(request):
             "avatarUrl": ""
         }
     })
+
+# Append these endpoints to the bottom of backend/core/views.py:
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def generate_draft(request, subtask_id):
+    """Generates an action starter draft for a subtask using Gemini."""
+    try:
+        subtask = Subtask.objects.get(id=subtask_id, goal__user=request.user)
+    except Subtask.DoesNotExist:
+        return Response({"error": "Subtask not found"}, status=404)
+
+    if not subtask.action_draft:
+        from .gemini_client import generate_subtask_draft
+        draft = generate_subtask_draft(subtask.goal.title, subtask.title)
+        subtask.action_draft = draft
+        subtask.save()
+
+    return Response({
+        "subtask_id": subtask.id,
+        "action_draft": subtask.action_draft
+    })
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def toggle_crisis(request, subtask_id):
+    """Toggles crisis focus mode for a subtask."""
+    try:
+        subtask = Subtask.objects.get(id=subtask_id, goal__user=request.user)
+    except Subtask.DoesNotExist:
+        return Response({"error": "Subtask not found"}, status=404)
+
+    subtask.is_crisis_active = not subtask.is_crisis_active
+    subtask.save()
+
+    return Response({
+        "subtask_id": subtask.id,
+        "is_crisis_active": subtask.is_crisis_active
+    })
