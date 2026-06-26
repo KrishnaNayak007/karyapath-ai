@@ -19,10 +19,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// NOTICE: No leading slashes in the paths below!
-// Axios will perfectly combine `${baseURL}${endpoint}` -> ".../api/goals/"
-
-// Replace your endpoints in frontend/src/services/api.ts with these (no leading slash):
 export const createGoal = async (goalData: any) => {
   const response = await api.post('goals/', goalData); // No leading slash
   return response.data;

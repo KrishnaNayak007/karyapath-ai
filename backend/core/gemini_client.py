@@ -12,7 +12,7 @@ import json
 import google.generativeai as genai
 
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-MODEL_NAME = "gemini-2.5-flash-lite"  # fast + cheap, fine for hackathon demo load
+MODEL_NAME = "gemini-3.5-flash"  
 
 
 def _call_gemini(prompt: str, json_mode: bool = False) -> str:
