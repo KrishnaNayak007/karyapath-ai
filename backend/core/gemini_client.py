@@ -196,7 +196,7 @@ def verify_subtask_screenshot(task_title: str, image_bytes: bytes, mime_type: st
         "data": image_bytes
     }
     
-    model = genai.GenerativeModel("gemini-1.5-flash") # Supports multimodal inputs
+    model = genai.GenerativeModel("gemini-2.5-flash") # Supports multimodal inputs
     try:
         response = model.generate_content([prompt, image_part], generation_config={"response_mime_type": "application/json"})
         result = json.loads(response.text.strip())
