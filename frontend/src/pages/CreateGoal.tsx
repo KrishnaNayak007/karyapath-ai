@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { createGoal, createGoalFromBrainDump, Goal, Subtask, ScheduledBlock } from '../services/api';
-import { Target, Calendar, ArrowRight, Sparkles, AlertCircle, Brain, ListTodo } from 'lucide-react';
+import { Target, Calendar, ArrowRight, Sparkles, AlertCircle, Brain, ListTodo, Mic, MicOff } from 'lucide-react';
 
 interface CreateGoalProps {
   setCurrentPage: (page: string) => void;
@@ -13,6 +13,10 @@ export default function CreateGoal({ setCurrentPage, onGoalCreated }: CreateGoal
   // Chaos Brain-Dump Mode State
   const [brainDumpText, setBrainDumpText] = useState('');
 
+  // Speech Recognition States
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
   // Structured Form Mode States (Original)
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -22,11 +26,61 @@ export default function CreateGoal({ setCurrentPage, onGoalCreated }: CreateGoal
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Speech Recognition Trigger Handlers
+  const handleToggleListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      setError("Speech recognition is not supported in this browser. Try using Google Chrome or Safari.");
+      return;
+    }
+
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+    } else {
+      setError(null);
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        // Append newly captured speech space-separated
+        setBrainDumpText((prev) => (prev ? `${prev.trim()} ${transcript}` : transcript));
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error("Speech Recognition Error:", event);
+        setError("Could not capture audio. Make sure microphone permissions are granted.");
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    // Validate inputs depending on which tab is active
+    // If speech-to-text is still running, stop it first
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+
     if (activeTab === 'manual') {
       if (!title || !deadline || !priority) {
         setError('Title, deadline, and priority level are required.');
@@ -34,7 +88,7 @@ export default function CreateGoal({ setCurrentPage, onGoalCreated }: CreateGoal
       }
     } else {
       if (!brainDumpText.trim()) {
-        setError("Please dump what is on your mind so Gemini can parse it.");
+        setError("Please dump what is on your mind or speak to Gemini.");
         return;
       }
     }
@@ -57,9 +111,7 @@ export default function CreateGoal({ setCurrentPage, onGoalCreated }: CreateGoal
       }
 
       console.log('Goal created successfully:', response);
-      // Callback saves standard structures to App.tsx global state
       onGoalCreated(response.goal, response.subtasks, response.scheduled_blocks);
-      // Navigate to the AI breakdown page
       setCurrentPage('ai-breakdown');
     } catch (err: any) {
       console.error('Error creating goal:', err);
@@ -132,18 +184,55 @@ export default function CreateGoal({ setCurrentPage, onGoalCreated }: CreateGoal
         <form onSubmit={handleSubmit} className="space-y-5">
           
           {activeTab === 'dump' ? (
-            /* CHAOS BRAIN-DUMP INTAKE VIEW */
+            /* CHAOS BRAIN-DUMP INTAKE VIEW WITH MIC */
             <div className="space-y-2">
-              <label className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
-                Vent your thoughts below
-              </label>
-              <textarea
-                value={brainDumpText}
-                onChange={(e) => setBrainDumpText(e.target.value)}
-                placeholder='e.g., "I need to study for my DSA exam which is next Friday, I&apos;m so stressed out."'
-                rows={5}
-                className="w-full bg-slate-900 border border-slate-800 focus:border-[#06B6D4] rounded-xl p-3.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition-colors resize-none leading-relaxed font-medium"
-              />
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+                  Vent your thoughts below
+                </label>
+                
+                {/* Microphone Button */}
+                <button
+                  type="button"
+                  onClick={handleToggleListening}
+                  className={`flex items-center space-x-1.5 px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    isListening
+                      ? 'bg-rose-500/10 border-rose-500/30 text-rose-400 animate-pulse'
+                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                  }`}
+                >
+                  {isListening ? (
+                    <>
+                      <MicOff className="w-3 h-3 text-rose-400" />
+                      <span>Stop Listening</span>
+                    </>
+                  ) : (
+                    <>
+                      <Mic className="w-3 h-3 text-[#06B6D4]" />
+                      <span>Speak to AI</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="relative">
+                <textarea
+                  value={brainDumpText}
+                  onChange={(e) => setBrainDumpText(e.target.value)}
+                  placeholder='e.g., "I need to study for my DSA exam which is next Friday, I&apos;m so stressed out."'
+                  rows={5}
+                  className="w-full bg-slate-900 border border-slate-800 focus:border-[#06B6D4] rounded-xl p-3.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition-colors resize-none leading-relaxed font-medium"
+                />
+                
+                {/* Mini Pulsing Dot inside Text Area when listening */}
+                {isListening && (
+                  <span className="absolute bottom-3 right-3 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                  </span>
+                )}
+              </div>
+
               <p className="text-[11px] text-slate-500 leading-normal font-medium">
                 Vent naturally without worry about dates or forms. Gemini autonomously resolves relative dates like &quot;next Friday&quot; or &quot;tomorrow&quot;, extracts objective scopes, and assigns priority based on stress metrics.
               </p>
